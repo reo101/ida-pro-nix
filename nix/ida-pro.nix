@@ -4,6 +4,8 @@
   perSystem =
     { pkgs, system, ... }:
     let
+      mkAddons = id: lib.imap (mkAddon { owner = id; }) addons;
+
       idaFhsEnv = pkgs.buildFHSEnv {
         name = "ida-pro-fhs";
         targetPkgs = pkgs: [ pkgs.python3 ];
