@@ -70,6 +70,8 @@
             "HEXV850"
           ];
 
+          mkAddons = id: lib.imap (mkAddon { owner = id; }) addons;
+
           mkHexlic =
             {
               name,
@@ -95,7 +97,7 @@
                     owner = name;
                     product_id = "IDAPRO";
                     product_version = lib.versions.pad 2 version;
-                    add_ons = lib.imap (mkAddon { owner = id; }) addons;
+                    add_ons = mkAddons id;
                     features = [ ];
                   };
                 };
