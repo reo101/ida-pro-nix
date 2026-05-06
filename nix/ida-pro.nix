@@ -191,10 +191,16 @@
               auto-patchelf \
                 --paths "$out" \
                 --libs "$out" "$out/plugins/platforms" ${lib.escapeShellArgs patchelfLibs};
+
+              mkdir -p "$out/bin";
+              ln -s "$out/${final.passthru.meta.mainProgram}" "$out/bin/";
             ''
           ];
 
-          passthru = { inherit fetchHiddenTorrent mkLicense; };
+          passthru = {
+            inherit fetchHiddenTorrent mkLicense;
+            meta.mainProgram = "ida";
+          };
         }
       );
     };
