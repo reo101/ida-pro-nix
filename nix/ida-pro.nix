@@ -134,6 +134,26 @@
       };
 
       libext = pkgs.stdenv.hostPlatform.extensions.sharedLibrary;
+
+      patchelfLibs = lib.map (pkg: "${lib.getLib pkg}/lib") [
+        pkgs.at-spi2-core
+        pkgs.cairo
+        pkgs.dbus
+        pkgs.fontconfig
+        pkgs.freetype
+        pkgs.gdk-pixbuf
+        pkgs.glib
+        pkgs.gtk3
+        pkgs.libgcc
+        pkgs.libglvnd
+        pkgs.libx11
+        pkgs.libxcrypt-legacy
+        pkgs.libxkbcommon
+        pkgs.pango
+        pkgs.qt6.qtbase
+        pkgs.qt6.qtwayland
+        pkgs.stdenv.cc.cc.lib
+      ];
     in
     {
       legacyPackages.ida-pro = (mkRawDerivation { }).extend (
@@ -170,29 +190,7 @@
 
               auto-patchelf \
                 --paths "$out" \
-                --libs "$out" "$out/plugins/platforms" '${
-                  lib.replaceStrings [ ":" ] [ "' '" ] (
-                    lib.makeLibraryPath [
-                      pkgs.at-spi2-core
-                      pkgs.cairo
-                      pkgs.dbus
-                      pkgs.fontconfig
-                      pkgs.freetype
-                      pkgs.gdk-pixbuf
-                      pkgs.glib
-                      pkgs.gtk3
-                      pkgs.libgcc
-                      pkgs.libglvnd
-                      pkgs.libx11
-                      pkgs.libxcrypt-legacy
-                      pkgs.libxkbcommon
-                      pkgs.pango
-                      pkgs.qt6.qtbase
-                      pkgs.qt6.qtwayland
-                      pkgs.stdenv.cc.cc.lib
-                    ]
-                  )
-                }';
+                --libs "$out" "$out/plugins/platforms" ${lib.escapeShellArgs patchelfLibs};
             ''
           ];
 
