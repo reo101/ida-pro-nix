@@ -125,15 +125,6 @@
       };
 
       libext = pkgs.stdenv.hostPlatform.extensions.sharedLibrary;
-
-      offsetForSystem =
-        {
-          "x86_64-linux" = {
-            "libida" = 37502243;
-            "libida32" = 37354435;
-          };
-        }
-        .${system} or (throw "Unsupported system");
     in
     {
       legacyPackages.ida-pro = (mkRawDerivation { }).extend (
@@ -252,9 +243,11 @@
             inherit fetchHiddenTorrent mkLicense;
             withRuntimeLibs =
               libs:
-              final.overrideAttrs (_: prev: {
-                runtimeLibs = prev.runtimeLibs ++ libs;
-              });
+              final.overrideAttrs (
+                _: prev: {
+                  runtimeLibs = prev.runtimeLibs ++ libs;
+                }
+              );
           };
         }
       );
