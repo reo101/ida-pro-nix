@@ -121,7 +121,7 @@
                 fi
               done < <(${lib.getExe' pkgs.findutils "find"} "$out" -type f -print0)
 
-              ${lib.getExe pkgs.auto-patchelf} \
+              auto-patchelf \
                 --paths "$out" \
                 --libs "$out" "$out/plugins/platforms" '${
                   lib.replaceStrings [ ":" ] [ "' '" ] (
