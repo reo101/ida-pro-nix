@@ -12,6 +12,7 @@ inputs.flake-parts.lib.mkFlake { inherit inputs; } (
 
     imports = [
       inputs.flake-file.flakeModules.default
+      ./nix/helpers.nix
       ./nix/ida-pro.nix
     ];
 
