@@ -162,13 +162,13 @@
               chmod +x 'install.run';
               ./'install.run' --mode 'unattended' --prefix "$out";
 
-              ${lib.getExe pkgs.perl} -0777 -pi - $out/libida{,32}${libext} <<'PERL';
+              perl -0777 -pi - $out/libida{,32}${libext} <<'PERL';
                 s/\xED\xFD\x42\K\x5C(?=\xF9\x78)/\xCB/
               PERL
 
               cp "$hexlic" "$out/idapro.hexlic";
 
-              ${lib.getExe pkgs.auto-patchelf} \
+              auto-patchelf \
                 --paths "$out" \
                 --libs "$out" "$out/plugins/platforms" '${
                   lib.replaceStrings [ ":" ] [ "' '" ] (
