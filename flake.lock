@@ -1,34 +1,5 @@
 {
   "nodes": {
-    "dlopen-resolver": {
-      "inputs": {
-        "flake-file": [
-          "flake-file"
-        ],
-        "flake-parts": [
-          "flake-parts"
-        ],
-        "nixpkgs": [
-          "nixpkgs"
-        ],
-        "systems": [
-          "systems"
-        ]
-      },
-      "locked": {
-        "lastModified": 1778122667,
-        "narHash": "sha256-6gfXm6E5Czh7ab2BcLCaHYZreLSY9LuR56S3rfea6QM=",
-        "owner": "reo101",
-        "repo": "dlopen-resolver",
-        "rev": "c6a09cb89ec334e9d91d28a52a5afbd8e77f649a",
-        "type": "github"
-      },
-      "original": {
-        "owner": "reo101",
-        "repo": "dlopen-resolver",
-        "type": "github"
-      }
-    },
     "flake-file": {
       "locked": {
         "lastModified": 1777679829,
@@ -82,7 +53,6 @@
     },
     "root": {
       "inputs": {
-        "dlopen-resolver": "dlopen-resolver",
         "flake-file": "flake-file",
         "flake-parts": "flake-parts",
         "nixpkgs": "nixpkgs",

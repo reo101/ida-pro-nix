@@ -9,15 +9,6 @@
   };
 
   inputs = {
-    dlopen-resolver = {
-      url = "github:reo101/dlopen-resolver";
-      inputs = {
-        flake-file.follows = "flake-file";
-        flake-parts.follows = "flake-parts";
-        nixpkgs.follows = "nixpkgs";
-        systems.follows = "systems";
-      };
-    };
     flake-file.url = "github:vic/flake-file";
     flake-parts = {
       url = "github:hercules-ci/flake-parts";
