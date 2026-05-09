@@ -77,10 +77,15 @@
           ];
 
           builder = lib.getExe idaFhsEnv;
+          PATH = lib.makeBinPath [
+            pkgs.auto-patchelf
+            pkgs.patchelf
+            pkgs.perl
+          ];
           args = [
             "-c"
             /* bash */ ''
-              set -xeuo pipefail
+              set -xeuo pipefail;
 
               cp "$src" 'install.run';
               chmod +x 'install.run';
@@ -115,18 +120,34 @@
                   ${lib.getExe pkgs.patchelf} --force-rpath --set-rpath "$rpath" "$elf"
                 fi
               done < <(${lib.getExe' pkgs.findutils "find"} "$out" -type f -print0)
+
+              ${lib.getExe pkgs.auto-patchelf} \
+                --paths "$out" \
+                --libs "$out" "$out/plugins/platforms" '${
+                  lib.replaceStrings [ ":" ] [ "' '" ] (
+                    lib.makeLibraryPath [
+                      pkgs.at-spi2-core
+                      pkgs.cairo
+                      pkgs.dbus
+                      pkgs.fontconfig
+                      pkgs.freetype
+                      pkgs.gdk-pixbuf
+                      pkgs.glib
+                      pkgs.gtk3
+                      pkgs.libgcc
+                      pkgs.libglvnd
+                      pkgs.libx11
+                      pkgs.libxcrypt-legacy
+                      pkgs.libxkbcommon
+                      pkgs.pango
+                      pkgs.qt6.qtbase
+                      pkgs.qt6.qtwayland
+                      pkgs.stdenv.cc.cc.lib
+                    ]
+                  )
+                }';
             ''
           ];
-
-          passthru = {
-            withRuntimeLibs =
-              libs:
-              final.overrideAttrs (
-                _: prev: {
-                  runtimeLibs = prev.runtimeLibs ++ libs;
-                }
-              );
-          };
         }
       );
     };
