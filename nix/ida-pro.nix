@@ -33,6 +33,7 @@
       ];
     in
     {
+      packages.default = self'.packages.ida-pro;
       packages.ida-pro =
         lib.flip pkgs.callPackage
           {
