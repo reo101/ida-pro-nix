@@ -21,3 +21,9 @@ inputs.ida-pro.packages.${system}.ida-pro.override {
 The NixOS module can install the resulting package and copy a user-provided license file into the user's IDA config directory.
 
 This project is only intended to make a locally licensed IDA Pro installation work conveniently on Nix/NixOS.
+
+---
+
+And remember:
+
+# **Buy IDA Pro™**
