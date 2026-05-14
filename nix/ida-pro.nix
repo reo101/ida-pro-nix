@@ -6,10 +6,7 @@
     let
       mkAddons = id: lib.imap (mkAddon { owner = id; }) addons;
 
-      idaFhsEnv = pkgs.buildFHSEnv {
-        name = "ida-pro-fhs";
-        targetPkgs = pkgs: [ pkgs.python3 ];
-      };
+      idaFhsEnv = pkgs.buildFHSEnv { name = "ida-pro-fhs"; };
 
       libext = pkgs.stdenv.hostPlatform.extensions.sharedLibrary;
 
@@ -31,6 +28,10 @@
         pkgs.qt6.qtbase
         pkgs.qt6.qtwayland
         pkgs.stdenv.cc.cc.lib
+      ];
+
+      patchelfRpaths = lib.map (pkg: "${lib.getLib pkg}/lib") [
+        pkgs.libsecret
       ];
     in
     {
@@ -143,7 +144,8 @@
 
               auto-patchelf \
                 --paths "$out" \
-                --libs "$out" "$out/plugins/platforms" ${lib.escapeShellArgs patchelfLibs};
+                --libs "$out" "$out/plugins/platforms" ${lib.escapeShellArgs patchelfLibs} \
+                --append-rpaths ${lib.escapeShellArgs patchelfRpaths};
 
               mkdir -p "$out/bin";
               ln -s "$out/${final.passthru.meta.mainProgram}" "$out/bin/";
