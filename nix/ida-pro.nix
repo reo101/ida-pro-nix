@@ -128,10 +128,7 @@
           override = args: make (if lib.isFunction args then args defaults else args);
         };
 
-      idaFhsEnv = pkgs.buildFHSEnv {
-        name = "ida-pro-fhs";
-        targetPkgs = pkgs: [ pkgs.python3 ];
-      };
+      idaFhsEnv = pkgs.buildFHSEnv { name = "ida-pro-fhs"; };
 
       libext = pkgs.stdenv.hostPlatform.extensions.sharedLibrary;
 
@@ -154,6 +151,10 @@
         pkgs.qt6.qtwayland
         pkgs.stdenv.cc.cc.lib
       ];
+
+      patchelfRpaths = lib.map (pkg: "${lib.getLib pkg}/lib") [
+        pkgs.libsecret
+      ];
     in
     {
       legacyPackages.ida-pro = (mkRawDerivation { }).extend (
@@ -164,8 +165,6 @@
           version = "9.3.260327";
 
           src = throw "Provide the source yourself, :クルーレス:";
-
-          hexlic = mkLicense.override { inherit (final) version; };
 
           builder = lib.getExe idaFhsEnv;
           PATH = lib.makeBinPath [
@@ -186,11 +185,10 @@
                 s/\xED\xFD\x42\K\x5C(?=\xF9\x78)/\xCB/
               PERL
 
-              cp "$hexlic" "$out/idapro.hexlic";
-
               auto-patchelf \
                 --paths "$out" \
-                --libs "$out" "$out/plugins/platforms" ${lib.escapeShellArgs patchelfLibs};
+                --libs "$out" "$out/plugins/platforms" ${lib.escapeShellArgs patchelfLibs} \
+                --append-rpaths ${lib.escapeShellArgs patchelfRpaths};
 
               mkdir -p "$out/bin";
               ln -s "$out/${final.passthru.meta.mainProgram}" "$out/bin/";
