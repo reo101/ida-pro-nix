@@ -21,7 +21,7 @@
           pathLike = types.coercedTo (types.oneOf [
             types.package
             types.path
-          ]) builtins.toString types.str;
+          ]) lib.toString types.str;
         in
         {
           programs.ida-pro = {
@@ -47,13 +47,13 @@
             };
             hexlic = lib.mkOption {
               description = ''
-                Path to a `hexlic` license file.
+                `hexlic` license file.
               '';
               type = pathLike;
             };
             pythonPackage = lib.mkOption {
               description = ''
-                The `python` package used for `idapyswitch`.
+                The `python` package used for IDAPython.
               '';
               type = types.package;
               default = pkgs.python3;
@@ -72,43 +72,33 @@
       config = lib.mkIf cfg.enable {
         environment.systemPackages = [ cfg.package ];
 
-        # TODO: configurable `configDir`
         system.userActivationScripts.idaProSetup = {
           text = /* bash */ ''
-            set -euo pipefail
+            set -euo pipefail;
 
-            export IDADIR="${cfg.package}"
-            export IDAUSR="$HOME/.idapro"
-            '${lib.getExe' pkgs.coreutils "mkdir"}' -p "$IDAUSR"
+            export IDADIR="${cfg.package}";
+            export IDAUSR="''${IDAUSR:-$HOME/.idapro}";
+
+            ${lib.getExe' pkgs.coreutils "mkdir"} -p "$IDAUSR";
 
             hexlic=${lib.escapeShellArg cfg.hexlic}
             if [ -e "$hexlic" ]; then
-              '${lib.getExe' pkgs.coreutils "install"}' -m 0600 \
+              ${lib.getExe' pkgs.coreutils "install"} -m 0600 \
                 "$hexlic" \
-                "$IDAUSR/idapro.hexlic"
+                "$IDAUSR/idapro.hexlic";
             fi
 
-            '${lib.getExe cfg.pythonPackage}' <<'PY'
-            from __future__ import annotations
-
-            import os
+            ${lib.getExe cfg.pythonPackage} <<'PY';
+            from glob import glob
             import sys
-            from pathlib import Path
 
-            idadir = Path(os.environ.get("IDADIR"))
-            idausr = Path(os.environ.get("IDAUSR"))
+            sys.path.append(glob("${cfg.package}/idalib/python/idapro-*.whl")[0])
 
-            os.environ.setdefault("TVHEADLESS", "1")
-
-            wheels = sorted((idadir / "idalib" / "python").glob("idapro-*.whl"))
-            paths = [*(str(w) for w in wheels), str(idadir / "idalib" / "python"), str(idadir / "python")]
-            sys.path[:0] = [path for path in paths if path not in sys.path]
-
-            import idapro  # noqa: F401
+            import idapro
             import ida_registry
 
             ${lib.pipe cfg.eulas [
-              (lib.map (eula: /* python */ ''ida_registry.reg_write_int("EULA ${builtins.toString eula}", 1)''))
+              (lib.map (eula: /* python */ ''ida_registry.reg_write_int("EULA ${lib.toString eula}", 1)''))
               (lib.concatStringsSep "\n")
             ]}
 
