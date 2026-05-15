@@ -2,7 +2,39 @@
 
 {
   perSystem =
-    { pkgs, system, ... }:
+    {
+      self',
+      pkgs,
+      system,
+      ...
+    }:
+    let
+      libext = pkgs.stdenv.hostPlatform.extensions.sharedLibrary;
+
+      patchelfLibs = lib.map (pkg: "${lib.getLib pkg}/lib") [
+        pkgs.at-spi2-core
+        pkgs.cairo
+        pkgs.dbus
+        pkgs.fontconfig
+        pkgs.freetype
+        pkgs.gdk-pixbuf
+        pkgs.glib
+        pkgs.gtk3
+        pkgs.libgcc
+        pkgs.libglvnd
+        pkgs.libx11
+        pkgs.libxcrypt-legacy
+        pkgs.libxkbcommon
+        pkgs.pango
+        pkgs.qt6.qtbase
+        pkgs.qt6.qtwayland
+        pkgs.stdenv.cc.cc.lib
+      ];
+
+      patchelfRpaths = lib.map (pkg: "${lib.getLib pkg}/lib") [
+        pkgs.libsecret
+      ];
+    in
     {
       packages.default = self'.packages.ida-pro;
       packages.ida-pro =
@@ -24,7 +56,7 @@
 
               inherit src;
 
-              builder = lib.getExe idaFhsEnv;
+              builder = lib.getExe (pkgs.buildFHSEnv { name = "ida-pro-fhs"; });
               PATH = lib.makeBinPath [
                 pkgs.auto-patchelf
                 pkgs.patchelf
