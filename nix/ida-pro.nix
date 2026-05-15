@@ -2,10 +2,13 @@
 
 {
   perSystem =
-    { self', pkgs, system, ... }:
+    {
+      self',
+      pkgs,
+      system,
+      ...
+    }:
     let
-      idaFhsEnv = pkgs.buildFHSEnv { name = "ida-pro-fhs"; };
-
       libext = pkgs.stdenv.hostPlatform.extensions.sharedLibrary;
 
       patchelfLibs = lib.map (pkg: "${lib.getLib pkg}/lib") [
@@ -53,7 +56,7 @@
 
               inherit src;
 
-              builder = lib.getExe idaFhsEnv;
+              builder = lib.getExe (pkgs.buildFHSEnv { name = "ida-pro-fhs"; });
               PATH = lib.makeBinPath [
                 pkgs.auto-patchelf
                 pkgs.patchelf
