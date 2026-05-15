@@ -9,6 +9,43 @@
     }:
     {
       legacyPackages = {
+        fetchHiddenTorrent =
+          {
+            name ? lib.last (lib.split "/" url),
+            outputHash,
+            url,
+            file,
+          }:
+          derivation {
+            inherit system name outputHash;
+
+            builder = lib.getExe pkgs.bash;
+            args = [
+              "-c"
+              /* bash */ ''
+                set -xeu pipefail;
+                shopt -s extglob;
+
+                ${lib.getExe pkgs.tor} \
+                  --DataDirectory "$TMPDIR/tor" \
+                  --RunAsDaemon '1';
+
+                ${lib.getExe pkgs.aria2} \
+                  --seed-time '0' \
+                  --select-file '${file}' \
+                  --index-out "${file}=''${PWD//+([^\/])/..}$out" \
+                  --torrent-file \
+                  <(${lib.getExe pkgs.curl} ${
+                    lib.escapeShellArgs [
+                      "--proxy"
+                      "socks5h://localhost:9050"
+                      url
+                    ]
+                  });
+              ''
+            ];
+          };
+
         mkLicense =
           let
             n = "93AF7A8E3A6EB93D1B4D1FB7EC29299D2BC8F3CE5F84BFE88E47DDBDD5550C3CE3D2B16A2E2FBD0FBD919E8038BB05752EC92DD1498CB283AA087A93184F1DD9DD5D5DF7857322DFCD70890F814B58448071BBABB0FC8A7868B62EB29CC2664C8FE61DFBC5DB0EE8BF6ECF0B65250514576C4384582211896E5478F9CB42FDED";
@@ -46,7 +83,8 @@
 
             mkAddons = id: lib.imap (mkAddon { owner = id; }) addons;
 
-            # HACK: is a derivation solely because nix lacks a `modexp` operation (or an `exp`, for that matter)
+            # HACK: is a derivation solely because nix lacks a `modexp` operation
+            #       (or an `exp`, for that matter)
             mkHexlic =
               {
                 name ? "auth",
@@ -119,43 +157,6 @@
               };
           in
           mkHexlic;
-
-        fetchHiddenTorrent =
-          {
-            name ? lib.last (lib.split "/" url),
-            outputHash,
-            url,
-            file,
-          }:
-          derivation {
-            inherit system name outputHash;
-
-            builder = lib.getExe pkgs.bash;
-            args = [
-              "-c"
-              /* bash */ ''
-                set -xeu pipefail;
-                shopt -s extglob;
-
-                ${lib.getExe pkgs.tor} \
-                  --DataDirectory "$TMPDIR/tor" \
-                  --RunAsDaemon '1';
-
-                ${lib.getExe pkgs.aria2} \
-                  --seed-time '0' \
-                  --select-file '${file}' \
-                  --index-out "${file}=''${PWD//+([^\/])/..}$out" \
-                  --torrent-file \
-                  <(${lib.getExe pkgs.curl} ${
-                    lib.escapeShellArgs [
-                      "--proxy"
-                      "socks5h://localhost:9050"
-                      url
-                    ]
-                  });
-              ''
-            ];
-          };
       };
     };
 }
