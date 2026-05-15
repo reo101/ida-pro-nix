@@ -108,7 +108,7 @@
             import ida_registry
 
             ${lib.pipe cfg.eulas [
-              (lib.map (eula: /* python */ ''ida_registry.reg_write_int("EULA${builtins.toString eula}", 1)''))
+              (lib.map (eula: /* python */ ''ida_registry.reg_write_int("EULA ${builtins.toString eula}", 1)''))
               (lib.concatStringsSep "\n")
             ]}
 
