@@ -75,6 +75,24 @@
                     s/\xED\xFD\x42\K\x5C(?=\xF9\x78)/\xCB/
                   PERL
 
+                  perl -0777 -pi - "$out/python/init.py" <<'PERL';
+                  s{(
+                      import site
+                      for sp in site\.getsitepackages\(\):
+                          if sp not in sys\.path:
+                              sys\.path\.append\(sp\)
+                  )}{$1
+                      try:
+                          extra_site_paths = ida_registry.reg_read_string("Python3ExtraPaths", None, "").split(os.pathsep)
+                      except Exception:
+                          extra_site_paths = []
+
+                      for sp in extra_site_paths:
+                          if sp:
+                              site.addsitedir(sp)
+                  } or die "failed to patch IDAPython init.py";
+                  PERL
+
                   auto-patchelf \
                     --paths "$out" \
                     --libs "$out" "$out/plugins/platforms" ${lib.escapeShellArgs patchelfLibs} \

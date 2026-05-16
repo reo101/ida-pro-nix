@@ -15,6 +15,8 @@ inputs.flake-parts.lib.mkFlake { inherit inputs; } (
       ./nix/helpers.nix
       ./nix/ida-pro.nix
       ./nix/module.nix
+      ./nix/packages
+      ./nix/plugins
     ];
 
     flake-file = {
