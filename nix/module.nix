@@ -36,6 +36,20 @@
           lib.map (pkg: if lib.isString pkg then ps.${pkg} else pkg) plugin.neededPythonPackages
         else
           throw "programs.ida-pro.plugins: `${plugin.pname or "<unnamed>"}.neededPythonPackages` must be a function or a list";
+
+      pluginPackages = plugin:
+        let
+          packages = plugin.packages or (lib.optional (plugin ? package) plugin.package);
+        in
+        if lib.isFunction packages then
+          packages {
+            inherit pkgs lib;
+            pythonPackage = cfg.pythonPackage;
+          }
+        else
+          packages;
+
+      pluginBinPath = lib.makeBinPath (lib.concatMap pluginPackages cfg.plugins);
     in
     {
       options =
@@ -163,6 +177,7 @@
 
           ida_registry.reg_write_string("Python3TargetDLL", "${pythonSharedLibrary}")
           ida_registry.reg_write_string("Python3ExtraPaths", "${pythonPath}")
+          ida_registry.reg_write_string("Python3ExtraBinPaths", "${pluginBinPath}")
           PY
 
           '${lib.getExe' pkgs.coreutils "mkdir"}' -p "$IDAUSR/plugins";
