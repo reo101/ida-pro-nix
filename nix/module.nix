@@ -1,8 +1,12 @@
-{ config, ... }:
+{ config, inputs, ... }:
 
 {
-  flake.modules.home-manager.default = config.flake.modules.home-manager.ida-pro;
-  flake.modules.home-manager.ida-pro =
+  imports = [
+    inputs.flake-parts.flakeModules.modules
+  ];
+
+  flake.modules.homeManager.default = config.flake.modules.homeManager.ida-pro;
+  flake.modules.homeManager.ida-pro =
     {
       pkgs,
       config,
@@ -172,4 +176,7 @@
         '';
       };
     };
+
+  # HACK: why isn't this the default
+  flake.homeManagerModules = config.flake.modules.homeManager;
 }
