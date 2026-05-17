@@ -1,0 +1,15 @@
+--- a/python/init.py
++++ b/python/init.py
+@@ -1,4 +1,12 @@
+     import site
+     for sp in site.getsitepackages():
+         if sp not in sys.path:
+             sys.path.append(sp)
++    try:
++        extra_site_paths = ida_registry.reg_read_string("Python3ExtraPaths", None, "").split(os.pathsep)
++    except Exception:
++        extra_site_paths = []
++
++    for sp in extra_site_paths:
++        if sp:
++            site.addsitedir(sp)
