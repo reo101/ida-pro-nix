@@ -13,4 +13,12 @@ rec {
     rev = version;
     hash = "sha256-BjqzGtsNzXgyleVWCPTNxjPGvg5s/fgjWriQiEQVeSI=";
   };
+
+  neededPythonPackages = ps: with ps; [
+    cdifflib
+    scikit-learn
+    numpy
+    joblib
+    pandas
+  ];
 }
