@@ -11,6 +11,7 @@
       pkgs,
       config,
       lib,
+      options,
       ...
     }:
     let
@@ -37,7 +38,8 @@
         else
           throw "programs.ida-pro.plugins: `${plugin.pname or "<unnamed>"}.neededPythonPackages` must be a function or a list";
 
-      pluginPackages = plugin:
+      pluginPackages =
+        plugin:
         let
           packages = plugin.packages or (lib.optional (plugin ? package) plugin.package);
         in
@@ -50,6 +52,50 @@
           packages;
 
       pluginBinPath = lib.makeBinPath (lib.concatMap pluginPackages cfg.plugins);
+
+      themeImportsCss =
+        theme:
+        lib.concatMapStrings (importName: /* css */ ''
+          @importtheme ${builtins.toJSON importName};
+        '') theme.imports;
+
+      themeFile =
+        name: theme:
+        let
+          importsCss = themeImportsCss theme;
+        in
+        if theme.source != null && theme.imports == [ ] then
+          theme.source
+        else if theme.source != null then
+          pkgs.runCommand "ida-pro-${name}-theme.css" { } ''
+            cat ${pkgs.writeText "ida-pro-${name}-theme-imports.css" importsCss} > "$out"
+            cat ${lib.escapeShellArg (toString theme.source)} >> "$out"
+          ''
+        else
+          pkgs.writeText "ida-pro-${name}-theme.css" (importsCss + theme.text);
+
+      directThemeName = "home-manager";
+
+      directTheme = lib.optionalAttrs (cfg.themeFile != null) {
+        ${directThemeName} = {
+          imports = cfg.themeFileImports;
+          source = cfg.themeFile;
+        };
+      };
+
+      themes = cfg.themes // directTheme;
+
+      themeFiles = lib.mapAttrs themeFile themes;
+
+      selectedTheme = if cfg.themeFile != null then directThemeName else cfg.theme or "default";
+
+      stylixEnabled =
+        options ? stylix.enable
+        && config.stylix.enable
+        && config.stylix.targets.ida-pro.enable
+        && config ? lib.stylix.colors;
+
+      stylixCss = import ./themes/stylix.nix { colors = config.lib.stylix.colors; };
     in
     {
       options =
@@ -59,6 +105,45 @@
             types.package
             types.path
           ]) lib.toString types.str;
+          themeType =
+            types.coercedTo types.path
+              (source: {
+                source = lib.toString source;
+                imports = [ ];
+              })
+              (
+                types.coercedTo types.lines (text: { inherit text; }) (
+                  types.submodule {
+                    freeformType = types.attrsOf types.raw;
+                    options = {
+                      imports = lib.mkOption {
+                        type = types.listOf types.str;
+                        default = [ "dark" ];
+                        description = ''
+                          IDA themes to import before this theme's CSS. This is
+                          useful for partial themes: by default inline custom CSS is
+                          layered over IDA's complete `dark` theme instead of
+                          falling back to light/default qproperty colors.
+                        '';
+                      };
+                      source = lib.mkOption {
+                        type = types.nullOr pathLike;
+                        default = null;
+                        description = ''
+                          Path to a CSS file to install as this IDA theme's `theme.css`.
+                        '';
+                      };
+                      text = lib.mkOption {
+                        type = types.nullOr types.lines;
+                        default = null;
+                        description = ''
+                          CSS text to install as this IDA theme's `theme.css`.
+                        '';
+                      };
+                    };
+                  }
+                )
+              );
           pluginType = types.submodule {
             # `callPackage` wraps plain attrsets with helper attributes such as
             # `override`/`overrideDerivation`. Keep the plugin schema strict for
@@ -87,6 +172,16 @@
           };
         in
         {
+          stylix.targets.ida-pro.enable = lib.mkOption {
+            description = ''
+              Whether Stylix should generate and select an IDA Pro CSS theme.
+            '';
+            type = types.bool;
+            default = config.stylix.autoEnable or true;
+            defaultText = lib.literalExpression "config.stylix.autoEnable";
+            example = false;
+          };
+
           programs.ida-pro = {
             enable = lib.mkEnableOption "IDA Pro";
             package = lib.mkOption {
@@ -139,10 +234,97 @@
               type = types.listOf pluginType;
               default = [ ];
             };
+            themes = lib.mkOption {
+              description = ''
+                Declarative IDA CSS themes. Each attribute is installed as
+                `$IDAUSR/themes/<name>/theme.css` and can either provide
+                `source = ./theme.css` or inline `text = ''${...}` CSS.
+                Inline/custom themes import IDA's `dark` theme by default;
+                set `imports = [ ];` for a complete standalone theme.
+              '';
+              type = types.attrsOf themeType;
+              default = { };
+              example = lib.literalExpression ''
+                {
+                  my-theme.text = ''''
+                    CustomIDAMemo {
+                      qproperty-line-bg-default: #1e1e2e;
+                    }
+                  '''';
+                  dark.source = inputs.ida-pro.legacyPackages.''${pkgs.system}.themes.dark.source;
+                }
+              '';
+            };
+            theme = lib.mkOption {
+              description = ''
+                Name of the IDA theme to select. When neither `theme` nor
+                `themeFile` is set, the built-in `default` theme is selected.
+              '';
+              type = types.nullOr types.str;
+              default = null;
+              example = "dark";
+            };
+            themeFile = lib.mkOption {
+              description = ''
+                CSS file, path, or derivation to install directly as the
+                selected IDA theme. This is a shortcut for defining a theme in
+                `programs.ida-pro.themes`; it is installed under the reserved
+                theme name `home-manager`.
+              '';
+              type = types.nullOr pathLike;
+              default = null;
+              example = lib.literalExpression "./ida-theme.css";
+            };
+            themeFileImports = lib.mkOption {
+              description = ''
+                IDA themes to import before `themeFile`. Defaults to `dark` so
+                small custom CSS files do not fall back to IDA's incomplete
+                light/default qproperty palette. Set to `[ ]` for a complete
+                standalone CSS theme file.
+              '';
+              type = types.listOf types.str;
+              default = [ "dark" ];
+            };
           };
         };
 
       config = lib.mkIf cfg.enable {
+        programs.ida-pro.themes = lib.mkIf stylixEnabled {
+          stylix = {
+            imports = [ "dark" ];
+            text = stylixCss;
+          };
+        };
+
+        programs.ida-pro.theme = lib.mkIf (stylixEnabled && cfg.themeFile == null) (lib.mkDefault "stylix");
+
+        assertions = [
+          {
+            assertion = cfg.theme == null || cfg.themeFile == null;
+            message = "programs.ida-pro: set either `theme` or `themeFile`, not both";
+          }
+          {
+            assertion = !(builtins.hasAttr directThemeName cfg.themes && cfg.themeFile != null);
+            message = "programs.ida-pro.themes.${directThemeName}: reserved for `programs.ida-pro.themeFile`";
+          }
+        ]
+        ++ lib.flatten (
+          lib.mapAttrsToList (name: theme: [
+            {
+              assertion = !(lib.hasInfix "/" name);
+              message = "programs.ida-pro.themes: theme name `${name}` must not contain `/`";
+            }
+            {
+              assertion = builtins.all (importName: !(lib.hasInfix "/" importName)) theme.imports;
+              message = "programs.ida-pro.themes.${name}.imports: imported theme names must not contain `/`";
+            }
+            {
+              assertion = (theme.source != null) != (theme.text != null);
+              message = "programs.ida-pro.themes.${name}: set exactly one of `source` or `text`";
+            }
+          ]) themes
+        );
+
         home.packages = [ cfg.package ];
 
         home.activation.idaProSetup = lib.hm.dag.entryAfter [ "writeBoundary" ] /* bash */ ''
@@ -178,14 +360,29 @@
           ida_registry.reg_write_string("Python3TargetDLL", "${pythonSharedLibrary}")
           ida_registry.reg_write_string("Python3ExtraPaths", "${pythonPath}")
           ida_registry.reg_write_string("Python3ExtraBinPaths", "${pluginBinPath}")
+          ida_registry.reg_write_string("ThemeName", ${builtins.toJSON selectedTheme})
           PY
 
           '${lib.getExe' pkgs.coreutils "mkdir"}' -p "$IDAUSR/plugins";
           ${lib.pipe cfg.plugins [
             (lib.map (plugin: /* bash */ ''
               # Install `${plugin.pname}` plugin (version `${plugin.version}`)
-              ln -sfnT ${plugin.src} "$IDAUSR/plugins/${plugin.pname}";
+              ln -sfnT ${plugin.src} "$IDAUSR/plugins/${plugin.installName or plugin.pname}";
             ''))
+            (lib.concatStringsSep "\n")
+          ]}
+
+          '${lib.getExe' pkgs.coreutils "mkdir"}' -p "$IDAUSR/themes";
+          ${lib.pipe themeFiles [
+            (lib.mapAttrsToList (
+              name: file: /* bash */ ''
+                # Install `${name}` theme
+                theme_name=${lib.escapeShellArg name};
+                theme_dir="$IDAUSR/themes/$theme_name";
+                '${lib.getExe' pkgs.coreutils "mkdir"}' -p "$theme_dir";
+                ln -sfnT ${lib.escapeShellArg (toString file)} "$theme_dir/theme.css";
+              ''
+            ))
             (lib.concatStringsSep "\n")
           ]}
         '';
