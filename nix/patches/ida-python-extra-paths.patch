@@ -1,10 +1,9 @@
---- a/python/init.py
-+++ b/python/init.py
-@@ -1,4 +1,12 @@
-     import site
-     for sp in site.getsitepackages():
+--- a/python/init.py	2026-05-17 23:15:19.081433850 +0300
++++ b/python/init.py	2026-05-17 23:15:19.270434468 +0300
+@@ -186,6 +186,23 @@
          if sp not in sys.path:
              sys.path.append(sp)
+ 
 +    try:
 +        extra_site_paths = ida_registry.reg_read_string("Python3ExtraPaths", None, "").split(os.pathsep)
 +    except Exception:
@@ -13,3 +12,15 @@
 +    for sp in extra_site_paths:
 +        if sp:
 +            site.addsitedir(sp)
++
++    try:
++        extra_bin_paths = ida_registry.reg_read_string("Python3ExtraBinPaths", None, "")
++    except Exception:
++        extra_bin_paths = ""
++
++    if extra_bin_paths:
++        os.environ["PATH"] = extra_bin_paths + os.pathsep + os.environ.get("PATH", "")
++
+ 
+ # Load the users personal init file
+ userrc = os.path.join(ida_diskio.get_user_idadir(), "idapythonrc.py")
