@@ -59,8 +59,8 @@
               builder = lib.getExe (pkgs.buildFHSEnv { name = "ida-pro-fhs"; });
               PATH = lib.makeBinPath [
                 pkgs.auto-patchelf
+                pkgs.patch
                 pkgs.patchelf
-                pkgs.perl
               ];
               args = [
                 "-c"
@@ -71,23 +71,7 @@
                   chmod +x 'install.run';
                   ./'install.run' --mode 'unattended' --prefix "$out";
 
-                  perl -0777 -pi - "$out/python/init.py" <<'PERL';
-                  s{(
-                      import site
-                      for sp in site\.getsitepackages\(\):
-                          if sp not in sys\.path:
-                              sys\.path\.append\(sp\)
-                  )}{$1
-                      try:
-                          extra_site_paths = ida_registry.reg_read_string("Python3ExtraPaths", None, "").split(os.pathsep)
-                      except Exception:
-                          extra_site_paths = []
-
-                      for sp in extra_site_paths:
-                          if sp:
-                              site.addsitedir(sp)
-                  } or die "failed to patch IDAPython init.py";
-                  PERL
+                  patch "$out/python/init.py" ${./patches/ida-python-extra-paths.patch};
 
                   auto-patchelf \
                     --paths "$out" \
