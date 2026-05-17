@@ -17,6 +17,7 @@ inputs.flake-parts.lib.mkFlake { inherit inputs; } (
       ./nix/module.nix
       ./nix/packages
       ./nix/plugins
+      ./nix/themes
     ];
 
     flake-file = {
