@@ -6,17 +6,20 @@
     let
       inherit (pkgs) lib;
 
-      scopeAttrs = scope: builtins.removeAttrs scope [
-        "callPackage"
-        "newScope"
-        "overrideScope"
-        "packages"
-      ];
+      scopeAttrs =
+        scope:
+        builtins.removeAttrs scope [
+          "callPackage"
+          "newScope"
+          "overrideScope"
+          "packages"
+        ];
 
       pluginsScope = lib.makeScope pkgs.newScope (self: {
         diaphora = self.callPackage ./diaphora.nix { };
         hrtng = self.callPackage ./hrtng.nix { };
         ida-cyberchef = self.callPackage ./ida-cyberchef.nix { };
+        openlumina = self.callPackage ./openlumina.nix { };
         ponce = self.callPackage ./ponce.nix { };
         tenet = self.callPackage ./tenet.nix { };
       });
