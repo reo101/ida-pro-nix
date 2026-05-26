@@ -1,5 +1,10 @@
 {
-  fetchzip,
+  lib,
+  stdenv,
+  fetchFromGitHub,
+  cmake,
+  ida-pro,
+  writeText,
   ...
 }:
 
@@ -7,9 +12,56 @@ rec {
   pname = "openlumina";
   version = "9.3.0";
 
-  drv = fetchzip {
-    url = "https://github.com/tomrus88/OpenLumina/releases/download/v${version}/openlumina-ida9.3.zip";
-    stripRoot = false;
-    hash = "sha256-5riN3e89AV3Ulq7DXFe8WBX8C48D5DqncGX0m3o8YBc=";
+  drv = stdenv.mkDerivation {
+    inherit pname;
+    inherit version;
+
+    src = fetchFromGitHub {
+      owner = "tomrus88";
+      repo = "OpenLumina";
+      rev = "v${version}";
+      hash = "sha256-lXhoJYapcHr86D9m0OU8iOhrhhcQNTB2j5/ZiJiT7Bg=";
+    };
+
+    nativeBuildInputs = [ cmake ];
+
+    cmakeFlags = [
+      (lib.cmakeFeature "CMAKE_BUILD_TYPE" "Release")
+      (lib.cmakeFeature "IdaSdk_DIR" (
+        "${
+          fetchFromGitHub {
+            owner = "HexRaysSA";
+            repo = "ida-sdk";
+            rev = "v${lib.versions.pad 2 ida-pro.version}";
+            hash = "sha256-fF7DH5L/hFz+haY3Z5uJgA7BmzGzTN8iFD4PCvUTr5w=";
+          }
+        }/src"
+      ))
+      (lib.cmakeFeature "DIDA_90_STABLE" "1")
+    ];
+
+    patches = [
+      (writeText "idausrdir.patch" ''
+        diff --git a/OpenLumina/OpenLumina.cpp b/OpenLumina/OpenLumina.cpp
+        index 31211baa..89990e23 100644
+        --- a/OpenLumina/OpenLumina.cpp
+        +++ b/OpenLumina/OpenLumina.cpp
+        @@ -210,7 +210,7 @@ struct file_enumerator_impl : file_enumerator_t
+         
+         bool plugin_ctx_t::init_hook()
+         {
+        -    const char* ida_dir = idadir(nullptr);
+        +    const char* ida_dir = get_user_idadir();
+         
+             char answer[QMAXPATH];
+
+      '')
+    ];
+
+    installPhase = ''
+      mkdir -p $out;
+      cp OpenLumina${stdenv.hostPlatform.extensions.sharedLibrary} $out/;
+      cp $src/ida-plugin.json $out/;
+    '';
   };
 }
