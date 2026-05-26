@@ -242,7 +242,8 @@
 
                 The scope exposes `ida-pro`, bound to
                 `programs.ida-pro.package`, so plugin definitions can depend on
-                the selected IDA Pro package.
+                the selected IDA Pro package. `allPlugins` is computed from
+                plugin-shaped scope attributes.
               '';
               type = types.listOf types.raw;
               default = [ ];

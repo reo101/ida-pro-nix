@@ -16,5 +16,23 @@ let
     ponce = self.callPackage ./ponce.nix { };
     tenet = self.callPackage ./tenet.nix { };
   });
+
+  extendedScope = lib.foldl' (scope: extension: scope.overrideScope extension) baseScope extensions;
+
+  pluginAttrs =
+    scope:
+    lib.filterAttrs (
+      _: value:
+      lib.isAttrs value && value ? pname && value ? version && value ? drv
+    ) (builtins.removeAttrs scope [
+      "allPlugins"
+      "callPackage"
+      "ida-pro"
+      "newScope"
+      "overrideScope"
+      "packages"
+    ]);
 in
-lib.foldl' (scope: extension: scope.overrideScope extension) baseScope extensions
+extendedScope.overrideScope (final: prev: {
+  allPlugins = lib.attrValues (pluginAttrs final);
+})
