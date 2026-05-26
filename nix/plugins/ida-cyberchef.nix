@@ -7,7 +7,7 @@ rec {
   pname = "ida-cyberchef";
   version = "0.2.0";
 
-  src = fetchFromGitHub {
+  drv = fetchFromGitHub {
     owner = "HexRaysSA";
     repo = "ida-cyberchef";
     rev = "v${version}";

@@ -17,5 +17,5 @@ rec {
   pname = "tenet";
   inherit version;
 
-  src = srcRoot + "/plugins";
+  drv = srcRoot + "/plugins";
 }
