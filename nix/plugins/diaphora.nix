@@ -7,7 +7,7 @@ rec {
   pname = "diaphora";
   version = "3.4.0";
 
-  src = fetchFromGitHub {
+  drv = fetchFromGitHub {
     owner = "joxeankoret";
     repo = "diaphora";
     rev = version;

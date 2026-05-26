@@ -17,7 +17,7 @@ rec {
   inherit version;
 
   # Package the Linux binary set targeting IDA 8.1.
-  src = runCommand "ponce-ida81-${version}" { } ''
+  drv = runCommand "ponce-ida81-${version}" { } ''
     mkdir -p "$out"
     cp -a "${srcRoot}/Ponce_ida81/." "$out/"
   '';

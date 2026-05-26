@@ -156,7 +156,7 @@
               version = lib.mkOption {
                 type = types.str;
               };
-              src = lib.mkOption {
+              drv = lib.mkOption {
                 type = pathLike;
               };
               neededPythonPackages = lib.mkOption {
@@ -367,7 +367,7 @@
           ${lib.pipe cfg.plugins [
             (lib.map (plugin: /* bash */ ''
               # Install `${plugin.pname}` plugin (version `${plugin.version}`)
-              ln -sfnT ${plugin.src} "$IDAUSR/plugins/${plugin.installName or plugin.pname}";
+              ln -sfnT ${plugin.drv} "$IDAUSR/plugins/${plugin.installName or plugin.pname}";
             ''))
             (lib.concatStringsSep "\n")
           ]}
