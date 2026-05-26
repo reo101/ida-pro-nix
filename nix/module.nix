@@ -22,6 +22,12 @@
 
       idaPythonPackageExtension = import ./packages/python-packages-extension.nix;
 
+      pluginsScope = import ./plugins {
+        inherit lib pkgs;
+        ida-pro = cfg.package;
+        extensions = cfg.pluginPackageExtensions;
+      };
+
       extendPython =
         python:
         python.override (old: {
@@ -46,6 +52,7 @@
         if lib.isFunction packages then
           packages {
             inherit pkgs lib;
+            ida-pro = cfg.package;
             pythonPackage = cfg.pythonPackage;
           }
         else
@@ -227,12 +234,45 @@
               type = types.listOf types.raw;
               default = [ idaPythonPackageExtension ];
             };
+            pluginPackageExtensions = lib.mkOption {
+              description = ''
+                Extensions applied to the IDA plugin package set passed to
+                `programs.ida-pro.plugins`. Extension functions receive the
+                final and previous plugin scopes and may use `final.callPackage`.
+
+                The scope exposes `ida-pro`, bound to
+                `programs.ida-pro.package`, so plugin definitions can depend on
+                the selected IDA Pro package.
+              '';
+              type = types.listOf types.raw;
+              default = [ ];
+              example = lib.literalExpression ''
+                [
+                  (final: prev: {
+                    my-plugin = final.callPackage ./my-plugin.nix { };
+                  })
+                ]
+              '';
+            };
             plugins = lib.mkOption {
               description = ''
-                Plugins to be installed alongside IDA Pro.
+                Plugins to be installed alongside IDA Pro. The value is a
+                function, like `python.withPackages`, that receives the IDA
+                plugin package set.
+
+                The package set is extensible through
+                `programs.ida-pro.pluginPackageExtensions` and exposes
+                `ida-pro` as the selected `programs.ida-pro.package`.
               '';
-              type = types.listOf pluginType;
-              default = [ ];
+              type = types.functionTo (types.listOf pluginType);
+              default = _: [ ];
+              apply = plugins: plugins pluginsScope;
+              example = lib.literalExpression ''
+                ps: [
+                  ps.diaphora
+                  ps.ida-cyberchef
+                ]
+              '';
             };
             themes = lib.mkOption {
               description = ''
