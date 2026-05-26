@@ -28,6 +28,11 @@ programs.ida-pro = {
   };
   hexlic = /path/to/idapro.hexlic;
 
+  plugins = ps: [
+    ps.diaphora
+    ps.ida-cyberchef
+  ];
+
   # Either select a named theme...
   themes = inputs.ida-pro.legacyPackages.${system}.themes;
   theme = "dark";
@@ -37,6 +42,8 @@ programs.ida-pro = {
   # themeFile = ./ida-theme.css;
 };
 ```
+
+Plugin definitions are selected like Python packages with `plugins = ps: [ ... ];`. The `ps` scope is extensible with `programs.ida-pro.pluginPackageExtensions`; it also exposes `ida-pro` as the selected IDA package for plugins that need it.
 
 If Stylix is enabled, the module also exposes `stylix.targets.ida-pro.enable` and will generate/select a `stylix` IDA theme by default.
 
