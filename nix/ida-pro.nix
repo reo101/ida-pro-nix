@@ -46,9 +46,23 @@
           pkgs.auto-patchelf
           pkgs.patch
           pkgs.patchelf
+          pkgs.copyDesktopItems
         ];
 
         dontUnpack = true;
+
+        desktopItems = [
+          (pkgs.makeDesktopItem {
+            name = "ida-pro";
+            exec = "ida";
+            icon = "ida-pro";
+            comment = finalAttrs.meta.description;
+            desktopName = "IDA Pro";
+            genericName = "Interactive Disassembler";
+            categories = [ "Development" ];
+            startupWMClass = "IDA";
+          })
+        ];
 
         installPhase = ''
           runHook preInstall
@@ -66,6 +80,8 @@
           mkdir -p "$out/bin";
           ln -s "$out/ida" "$out/bin/";
 
+          install -Dm644 "$out/appico.png" "$out/share/pixmaps/ida-pro.png";
+
           runHook postInstall
         '';
 
@@ -78,7 +94,12 @@
             --append-rpaths ${lib.escapeShellArgs patchelfRpaths};
         '';
 
-        meta.mainProgram = "ida";
+        meta = {
+          description = "A powerful disassembler, decompiler and a versatile debugger. In one tool.";
+          homepage = "https://hex-rays.com/ida-pro";
+          license = lib.licenses.unfree;
+          mainProgram = "ida";
+        };
       });
     };
 }
