@@ -5,12 +5,9 @@
     {
       self',
       pkgs,
-      system,
       ...
     }:
     let
-      libext = pkgs.stdenv.hostPlatform.extensions.sharedLibrary;
-
       patchelfLibs = lib.map (pkg: "${lib.getLib pkg}/lib") [
         pkgs.at-spi2-core
         pkgs.cairo
@@ -34,65 +31,54 @@
       patchelfRpaths = lib.map (pkg: "${lib.getLib pkg}/lib") [
         pkgs.libsecret
       ];
+
+      idaProFhs = pkgs.buildFHSEnv { name = "ida-pro-fhs"; };
     in
     {
       packages.default = self'.packages.ida-pro;
-      packages.ida-pro =
-        lib.flip pkgs.callPackage
-          {
-            src = throw "Provide the source yourself, :クルーレス:";
+      packages.ida-pro = pkgs.stdenvNoCC.mkDerivation (finalAttrs: {
+        pname = "ida-pro";
+        version = "9.3.260327";
+
+        src = throw "Provide the source yourself, :クルーレス:";
+
+        nativeBuildInputs = [
+          pkgs.auto-patchelf
+          pkgs.patch
+          pkgs.patchelf
+        ];
+
+        dontUnpack = true;
+
+        installPhase = ''
+          runHook preInstall
+
+          ${lib.getExe idaProFhs} -c ${
+            lib.escapeShellArg (/* bash */ ''
+              set -xeuo pipefail;
+
+              cp "$src" 'install.run';
+              chmod +x 'install.run';
+              ./'install.run' --mode 'unattended' --prefix "$out";
+            '')
           }
-          (
-            {
-              # HACK: default `throw` value not set here because guess what `pkgs.src` yields...
-              src,
-              version ? "9.3.260327",
-            }:
-            derivation {
-              inherit system;
 
-              name = "ida-pro";
-              inherit version;
+          mkdir -p "$out/bin";
+          ln -s "$out/ida" "$out/bin/";
 
-              inherit src;
+          runHook postInstall
+        '';
 
-              builder = lib.getExe (pkgs.buildFHSEnv { name = "ida-pro-fhs"; });
-              PATH = lib.makeBinPath [
-                pkgs.auto-patchelf
-                pkgs.patch
-                pkgs.patchelf
-                pkgs.perl
-              ];
-              args = [
-                "-c"
-                /* bash */ ''
-                  set -xeuo pipefail;
+        preFixup = ''
+          patch "$out/python/init.py" ${./patches/ida-python-extra-paths.patch};
 
-                  cp "$src" 'install.run';
-                  chmod +x 'install.run';
-                  ./'install.run' --mode 'unattended' --prefix "$out";
+          auto-patchelf \
+            --paths "$out" \
+            --libs "$out" "$out/plugins/platforms" ${lib.escapeShellArgs patchelfLibs} \
+            --append-rpaths ${lib.escapeShellArgs patchelfRpaths};
+        '';
 
-                  perl -0777 -pi - $out/libida{,32}${libext} <<'PERL';
-                    s/\xED\xFD\x42\K\x5C(?=\xF9\x78)/\xCB/
-                  PERL
-
-                  patch "$out/python/init.py" ${./patches/ida-python-extra-paths.patch};
-
-                  auto-patchelf \
-                    --paths "$out" \
-                    --libs "$out" "$out/plugins/platforms" ${lib.escapeShellArgs patchelfLibs} \
-                    --append-rpaths ${lib.escapeShellArgs patchelfRpaths};
-
-                  mkdir -p "$out/bin";
-                  ln -s "$out/ida" "$out/bin/";
-                ''
-              ];
-            }
-            // {
-              passthru = {
-                meta.mainProgram = "ida";
-              };
-            }
-          );
+        meta.mainProgram = "ida";
+      });
     };
 }
