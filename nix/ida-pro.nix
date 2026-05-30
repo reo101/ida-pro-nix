@@ -30,6 +30,7 @@
 
       patchelfRpaths = lib.map (pkg: "${lib.getLib pkg}/lib") [
         pkgs.libsecret
+        pkgs.curl
       ];
 
       idaProFhs = pkgs.buildFHSEnv { name = "ida-pro-fhs"; };
