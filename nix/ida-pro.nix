@@ -8,7 +8,7 @@
       ...
     }:
     let
-      patchelfLibs = lib.map (pkg: "${lib.getLib pkg}/lib") [
+      autoPatchelfLibs = [
         pkgs.at-spi2-core
         pkgs.cairo
         pkgs.dbus
@@ -43,19 +43,55 @@
         src = throw "Provide the source yourself, :クルーレス:";
 
         nativeBuildInputs = [
-          pkgs.auto-patchelf
+          pkgs.autoPatchelfHook
           pkgs.patch
           pkgs.patchelf
           pkgs.copyDesktopItems
         ];
 
-        dontUnpack = true;
+        dontConfigure = true;
+        dontBuild = true;
+
+        unpackPhase = ''
+          runHook preUnpack
+
+          ${lib.getExe idaProFhs} -c ${
+            lib.escapeShellArg (/* bash */ ''
+              set -xeuo pipefail;
+
+              cp "$src" 'install.run';
+              chmod +x 'install.run';
+              ./'install.run' --mode 'unattended' --prefix "$PWD/ida-pro";
+            '')
+          }
+
+          sourceRoot="$PWD/ida-pro"
+
+          runHook postUnpack
+        '';
+
+        patches = [
+          ./patches/ida-python-extra-paths.patch
+        ];
+
+        installPhase = ''
+          runHook preInstall
+
+          cp -aT . "$out"
+
+          mkdir -p "$out/bin";
+          ln -s "$out/ida" "$out/bin/";
+
+          install -Dm644 "$out/appico.png" "$out/share/pixmaps/${finalAttrs.pname}.png";
+
+          runHook postInstall
+        '';
 
         desktopItems = [
           (pkgs.makeDesktopItem {
-            name = "ida-pro";
-            exec = "ida";
-            icon = "ida-pro";
+            name = finalAttrs.pname;
+            exec = finalAttrs.meta.mainProgram;
+            icon = finalAttrs.pname;
             comment = finalAttrs.meta.description;
             desktopName = "IDA Pro";
             genericName = "Interactive Disassembler";
@@ -64,34 +100,13 @@
           })
         ];
 
-        installPhase = ''
-          runHook preInstall
-
-          ${lib.getExe idaProFhs} -c ${
-            lib.escapeShellArg (/* bash */ ''
-              set -xeuo pipefail;
-
-              cp "$src" 'install.run';
-              chmod +x 'install.run';
-              ./'install.run' --mode 'unattended' --prefix "$out";
-            '')
-          }
-
-          mkdir -p "$out/bin";
-          ln -s "$out/ida" "$out/bin/";
-
-          install -Dm644 "$out/appico.png" "$out/share/pixmaps/ida-pro.png";
-
-          runHook postInstall
-        '';
+        buildInputs = lib.map lib.getLib autoPatchelfLibs;
+        appendRunpaths = patchelfRpaths;
 
         preFixup = ''
-          patch "$out/python/init.py" ${./patches/ida-python-extra-paths.patch};
-
-          auto-patchelf \
-            --paths "$out" \
-            --libs "$out" "$out/plugins/platforms" ${lib.escapeShellArgs patchelfLibs} \
-            --append-rpaths ${lib.escapeShellArgs patchelfRpaths};
+          if [ -d "$out/plugins/platforms" ]; then
+            addAutoPatchelfSearchPath --no-recurse "$out/plugins/platforms"
+          fi
         '';
 
         meta = {
