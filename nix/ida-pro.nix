@@ -17,6 +17,7 @@
         pkgs.gdk-pixbuf
         pkgs.glib
         pkgs.gtk3
+        pkgs.curl
         pkgs.libgcc
         pkgs.libglvnd
         pkgs.libx11
