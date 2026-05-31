@@ -5,7 +5,7 @@
              sys.path.append(sp)
  
 +    try:
-+        extra_site_paths = ida_registry.reg_read_string("Python3ExtraPaths", None, "").split(os.pathsep)
++        extra_site_paths = ida_registry.reg_read_string("Python3ExtraSitePaths", None, "").split(os.pathsep)
 +    except Exception:
 +        extra_site_paths = []
 +

@@ -18,7 +18,7 @@
       cfg = config.programs.ida-pro;
       libext = pkgs.stdenv.hostPlatform.extensions.sharedLibrary;
       pythonSharedLibrary = "${cfg.pythonPackage}/lib/lib${cfg.pythonPackage.libPrefix}${libext}";
-      pythonPath = "${cfg.pythonPackage}/${cfg.pythonPackage.sitePackages}";
+      pythonSitePath = "${cfg.pythonPackage}/${cfg.pythonPackage.sitePackages}";
 
       idaPythonPackageExtension = import ./packages/python-packages-extension.nix;
 
@@ -399,7 +399,7 @@
           ]}
 
           ida_registry.reg_write_string("Python3TargetDLL", "${pythonSharedLibrary}")
-          ida_registry.reg_write_string("Python3ExtraPaths", "${pythonPath}")
+          ida_registry.reg_write_string("Python3ExtraSitePaths", "${pythonSitePath}")
           ida_registry.reg_write_string("Python3ExtraBinPaths", "${pluginBinPath}")
           ida_registry.reg_write_string("ThemeName", ${builtins.toJSON selectedTheme})
           PY
