@@ -30,6 +30,7 @@
 
       patchelfRpaths = lib.map (pkg: "${lib.getLib pkg}/lib") [
         pkgs.libsecret
+        pkgs.openssl
         pkgs.curl
       ];
 
