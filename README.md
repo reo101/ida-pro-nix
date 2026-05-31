@@ -33,6 +33,9 @@ programs.ida-pro = {
     ps.ida-cyberchef
   ];
 
+  # Additional packages to expose to IDAPython.
+  extraPythonPackages = ps: [ ps.requests ];
+
   # Either select a named theme...
   themes = inputs.ida-pro.legacyPackages.${system}.themes;
   theme = "dark";

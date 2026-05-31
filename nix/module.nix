@@ -35,14 +35,21 @@
           ) cfg.pythonPackageExtensions;
         });
 
+      resolvePythonPackages =
+        optionName: ps: packages:
+        if lib.isFunction packages then
+          packages ps
+        else if lib.isList packages then
+          lib.map (pkg: if lib.isString pkg then ps.${pkg} else pkg) packages
+        else
+          throw "${optionName} must be a function or a list";
+
       pluginPythonPackages =
         ps: plugin:
-        if lib.isFunction plugin.neededPythonPackages then
-          plugin.neededPythonPackages ps
-        else if lib.isList plugin.neededPythonPackages then
-          lib.map (pkg: if lib.isString pkg then ps.${pkg} else pkg) plugin.neededPythonPackages
-        else
-          throw "programs.ida-pro.plugins: `${plugin.pname or "<unnamed>"}.neededPythonPackages` must be a function or a list";
+        resolvePythonPackages
+          "programs.ida-pro.plugins: `${plugin.pname or "<unnamed>"}.neededPythonPackages`"
+          ps
+          plugin.neededPythonPackages;
 
       pluginPackages =
         plugin:
@@ -222,6 +229,12 @@
                   }
                 )
               );
+          pythonPackagesSpecType =
+            types.either
+              # Either a `ps: [ ps.a ps.b ]` ...
+              (types.functionTo (types.listOf types.package))
+              # ... or a direct `[ pkg1 "pkg2" ]`.
+              (types.listOf (types.either types.str types.package));
           pluginType = types.submodule {
             # `callPackage` wraps plain attrsets with helper attributes such as
             # `override`/`overrideDerivation`. Keep the plugin schema strict for
@@ -238,12 +251,7 @@
                 type = pathLike;
               };
               neededPythonPackages = lib.mkOption {
-                type =
-                  types.either
-                    # Either a `ps: [ ps.a ps.b ]` ...
-                    (types.functionTo (types.listOf types.package))
-                    # ... or a direct `[ pkg1 "pkg2" ]`
-                    (types.listOf (types.either types.str types.package));
+                type = pythonPackagesSpecType;
                 default = _: [ ];
               };
             };
@@ -296,7 +304,27 @@
               default = pkgs.python3;
               apply =
                 python:
-                (extendPython python).withPackages (ps: lib.concatMap (pluginPythonPackages ps) cfg.plugins);
+                (extendPython python).withPackages (
+                  ps:
+                  resolvePythonPackages "programs.ida-pro.extraPythonPackages" ps cfg.extraPythonPackages
+                  ++ lib.concatMap (pluginPythonPackages ps) cfg.plugins
+                );
+            };
+            extraPythonPackages = lib.mkOption {
+              description = ''
+                Additional Python packages to make available to IDAPython.
+                The value can be a function like `python.withPackages`, or a
+                direct list containing package values and package names from the
+                final Python package set.
+              '';
+              type = pythonPackagesSpecType;
+              default = _: [ ];
+              example = lib.literalExpression ''
+                ps: [
+                  ps.requests
+                  "pydantic"
+                ]
+              '';
             };
             pythonPackageExtensions = lib.mkOption {
               description = ''
