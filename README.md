@@ -40,6 +40,10 @@ programs.ida-pro = {
   # ...or provide a CSS file directly. `themeFile` imports `dark` first by
   # default; set `themeFileImports = [ ];` for a complete standalone theme.
   # themeFile = ./ida-theme.css;
+
+  # Declarative IDA registry settings. Attrsets become subkeys; strings,
+  # integers, booleans, null, string lists, and byte lists (0..255) are supported.
+  settings.MyPlugin.Enabled = true;
 };
 ```
 

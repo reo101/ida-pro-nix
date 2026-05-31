@@ -94,7 +94,13 @@
 
       themeFiles = lib.mapAttrs themeFile themes;
 
-      selectedTheme = if cfg.themeFile != null then directThemeName else cfg.theme or "default";
+      selectedTheme =
+        if cfg.themeFile != null then
+          directThemeName
+        else if cfg.theme != null then
+          cfg.theme
+        else
+          "default";
 
       stylixEnabled =
         options ? stylix.enable
@@ -103,6 +109,71 @@
         && config ? lib.stylix.colors;
 
       stylixCss = import ./themes/stylix.nix { colors = config.lib.stylix.colors; };
+
+      registrySettingsDefaults = {
+        Python3TargetDLL = pythonSharedLibrary;
+        Python3ExtraSitePaths = pythonSitePath;
+        Python3ExtraBinPaths = pluginBinPath;
+        ThemeName = selectedTheme;
+      }
+      // lib.listToAttrs (lib.map (eula: lib.nameValuePair "EULA ${lib.toString eula}" 1) cfg.eulas);
+
+      showSettingPath =
+        optionLoc: path:
+        lib.concatStringsSep "." optionLoc + lib.concatMapStrings (name: "[${builtins.toJSON name}]") path;
+
+      parseRegistrySettings =
+        optionLoc: path: settings:
+        lib.mapAttrs (name: parseRegistryValue optionLoc (path ++ [ name ])) settings;
+
+      parseRegistryValue =
+        optionLoc: path: value:
+        if builtins.isAttrs value then
+          {
+            shape = "subkey";
+            value = parseRegistrySettings optionLoc path value;
+          }
+        else if builtins.isList value then
+          if builtins.all builtins.isString value then
+            {
+              shape = "string-list";
+              value = value;
+            }
+          else if builtins.all builtins.isInt value then
+            let
+              invalidByte = lib.findFirst (item: !(0 <= item && item <= 255)) null value;
+            in
+            if invalidByte == null then
+              {
+                shape = "binary";
+                value = value;
+              }
+            else
+              throw "${showSettingPath optionLoc path}: integer lists are written as binary data, but ${lib.toString invalidByte} is outside the byte range 0..255"
+          else
+            throw "${showSettingPath optionLoc path}: lists must contain either only strings or only byte integers"
+        else if builtins.isString value then
+          {
+            shape = "string";
+            inherit value;
+          }
+        else if builtins.isInt value then
+          {
+            shape = "int";
+            inherit value;
+          }
+        else if builtins.isBool value then
+          {
+            shape = "bool";
+            inherit value;
+          }
+        else if builtins.typeOf value == "null" then
+          {
+            shape = "delete";
+            inherit value;
+          }
+        else
+          throw "${showSettingPath optionLoc path}: unsupported IDA registry setting value of type ${builtins.typeOf value}";
     in
     {
       options =
@@ -285,14 +356,24 @@
               '';
               type = types.attrsOf themeType;
               default = { };
+              apply =
+                themes:
+                lib.optionalAttrs stylixEnabled {
+                  stylix = {
+                    imports = [ "dark" ];
+                    source = null;
+                    text = stylixCss;
+                  };
+                }
+                // themes;
               example = lib.literalExpression ''
                 {
-                  my-theme.text = ''''
+                  my-theme.text = '''
                     CustomIDAMemo {
                       qproperty-line-bg-default: #1e1e2e;
                     }
-                  '''';
-                  dark.source = inputs.ida-pro.legacyPackages.''${pkgs.system}.themes.dark.source;
+                  ''';
+                  dark.source = inputs.ida-pro.legacyPackages.''${pkgs.stdenv.hostPlatform.system}.themes.dark.source;
                 }
               '';
             };
@@ -302,7 +383,7 @@
                 `themeFile` is set, the built-in `default` theme is selected.
               '';
               type = types.nullOr types.str;
-              default = null;
+              default = if stylixEnabled && cfg.themeFile == null then "stylix" else null;
               example = "dark";
             };
             themeFile = lib.mkOption {
@@ -326,19 +407,51 @@
               type = types.listOf types.str;
               default = [ "dark" ];
             };
+            settings = lib.mkOption {
+              description = ''
+                Declarative IDA registry settings. Attribute sets become
+                registry subkeys and scalar values become values in the current
+                key. Strings, integers, booleans and null are supported; null
+                deletes the named value. A list of strings is written as an IDA
+                string-list key, while a list of integers in the range 0..255 is
+                written as a binary value.
+
+                The module populates this option with defaults for IDAPython,
+                plugin paths, selected theme, and accepted EULAs. User values
+                can override those defaults with normal module priorities.
+              '';
+              type = types.attrsOf types.anything;
+              default = { };
+              apply = lib.recursiveUpdate (lib.optionalAttrs cfg.enable registrySettingsDefaults);
+              example = lib.literalExpression ''
+                {
+                  ThemeName = "dark";
+                  "EULA 93" = 1;
+                  MyPlugin = {
+                    Enabled = true;
+                    CachePath = "/tmp/ida-cache";
+                  };
+                }
+              '';
+            };
+            registrySettingsJson = lib.mkOption {
+              description = ''
+                Read-only parsed IDA registry settings as JSON. This is the
+                representation consumed by the activation script: each setting is
+                tagged with a `shape` and a `value` after Nix-side parsing and
+                validation.
+              '';
+              type = types.str;
+              readOnly = true;
+              default = lib.pipe cfg.settings [
+                (parseRegistrySettings [ "programs" "ida-pro" "settings" ] [ ])
+                builtins.toJSON
+              ];
+            };
           };
         };
 
       config = lib.mkIf cfg.enable {
-        programs.ida-pro.themes = lib.mkIf stylixEnabled {
-          stylix = {
-            imports = [ "dark" ];
-            text = stylixCss;
-          };
-        };
-
-        programs.ida-pro.theme = lib.mkIf (stylixEnabled && cfg.themeFile == null) (lib.mkDefault "stylix");
-
         assertions = [
           {
             assertion = cfg.theme == null || cfg.themeFile == null;
@@ -383,6 +496,7 @@
 
           '${lib.getExe cfg.pythonPackage}' <<'PY';
           from glob import glob
+          import json
           import sys
 
           sys.path.append(glob("${cfg.package}/idalib/python/idapro-*.whl")[0])
@@ -390,18 +504,40 @@
           import idapro
           import ida_registry
 
-          # Accept EULA(s)
-          ${lib.pipe cfg.eulas [
-            (lib.map (eula: /* python */ ''
-              ida_registry.reg_write_int("EULA ${lib.toString eula}", 1)
-            ''))
-            (lib.concatStringsSep "\n")
-          ]}
+          with open(${builtins.toJSON (toString (pkgs.writeText "ida_registry_settings.json" cfg.registrySettingsJson))}) as registry_settings_file:
+              registry_settings = json.load(registry_settings_file)
 
-          ida_registry.reg_write_string("Python3TargetDLL", "${pythonSharedLibrary}")
-          ida_registry.reg_write_string("Python3ExtraSitePaths", "${pythonSitePath}")
-          ida_registry.reg_write_string("Python3ExtraBinPaths", "${pluginBinPath}")
-          ida_registry.reg_write_string("ThemeName", ${builtins.toJSON selectedTheme})
+          def registry_path(parts):
+              return "/".join(parts) if parts else None
+
+          def write_registry_value(name, entry, parts):
+              subkey = registry_path(parts)
+
+              match entry:
+                  case {"shape": "subkey", "value": value}:
+                      write_registry_tree(value, (*parts, name))
+                  case {"shape": "delete"}:
+                      ida_registry.reg_delete(name, subkey)
+                  case {"shape": "bool", "value": value}:
+                      ida_registry.reg_write_bool(name, int(value), subkey)
+                  case {"shape": "int", "value": value}:
+                      ida_registry.reg_write_int(name, value, subkey)
+                  case {"shape": "string", "value": value}:
+                      ida_registry.reg_write_string(name, value, subkey)
+                  case {"shape": "string-list", "value": value}:
+                      ida_registry._ida_registry.reg_write_strlist(value, registry_path([*parts, name]))
+                  case {"shape": "binary", "value": value}:
+                      ida_registry.reg_write_binary(name, bytes(value), subkey)
+                  case {"shape": shape}:
+                      raise ValueError(f"unknown registry setting shape {shape!r}")
+                  case _:
+                      raise ValueError(f"invalid registry setting entry {entry!r}")
+
+          def write_registry_tree(settings, parts=()):
+              for name, entry in settings.items():
+                  write_registry_value(name, entry, parts)
+
+          write_registry_tree(registry_settings)
           PY
 
           '${lib.getExe' pkgs.coreutils "mkdir"}' -p "$IDAUSR/plugins";
