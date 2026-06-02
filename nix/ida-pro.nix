@@ -19,6 +19,7 @@
         pkgs.gtk3
         pkgs.libgcc
         pkgs.libglvnd
+        pkgs.libinput
         pkgs.libx11
         pkgs.libxcrypt-legacy
         pkgs.libxkbcommon
