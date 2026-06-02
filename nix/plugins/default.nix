@@ -2,12 +2,18 @@
   lib,
   pkgs,
   ida-pro,
+  ida-sdk ? pkgs.fetchFromGitHub {
+    owner = "HexRaysSA";
+    repo = "ida-sdk";
+    rev = "v${lib.versions.pad 2 ida-pro.version}.1-release";
+    hash = "sha256-on7EDh0bwnhordMN9AoIGFdQWCzPtwcOagvmcWBtjkk=";
+  },
   extensions ? [ ],
 }:
 
 let
   baseScope = lib.makeScope pkgs.newScope (self: {
-    inherit ida-pro;
+    inherit ida-pro ida-sdk;
 
     diaphora = self.callPackage ./diaphora.nix { };
     hrtng = self.callPackage ./hrtng.nix { };
@@ -28,6 +34,7 @@ let
       "allPlugins"
       "callPackage"
       "ida-pro"
+      "ida-sdk"
       "newScope"
       "overrideScope"
       "packages"

@@ -3,7 +3,7 @@
   stdenv,
   fetchFromGitHub,
   cmake,
-  ida-pro,
+  ida-sdk,
   writeText,
   ...
 }:
@@ -27,16 +27,7 @@ rec {
 
     cmakeFlags = [
       (lib.cmakeFeature "CMAKE_BUILD_TYPE" "Release")
-      (lib.cmakeFeature "IdaSdk_DIR" (
-        "${
-          fetchFromGitHub {
-            owner = "HexRaysSA";
-            repo = "ida-sdk";
-            rev = "v${lib.versions.pad 2 ida-pro.version}";
-            hash = "sha256-fF7DH5L/hFz+haY3Z5uJgA7BmzGzTN8iFD4PCvUTr5w=";
-          }
-        }/src"
-      ))
+      (lib.cmakeFeature "IdaSdk_DIR" "${ida-sdk}/src")
       (lib.cmakeFeature "DIDA_90_STABLE" "1")
     ];
 

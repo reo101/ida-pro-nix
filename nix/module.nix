@@ -340,8 +340,9 @@
                 final and previous plugin scopes and may use `final.callPackage`.
 
                 The scope exposes `ida-pro`, bound to
-                `programs.ida-pro.package`, so plugin definitions can depend on
-                the selected IDA Pro package. `allPlugins` is computed from
+                `programs.ida-pro.package`, and `ida-sdk`, bound to the matching
+                IDA SDK source, so plugin definitions can depend on the selected
+                IDA Pro package and SDK. `allPlugins` is computed from
                 plugin-shaped scope attributes.
               '';
               type = types.listOf types.raw;
@@ -362,7 +363,8 @@
 
                 The package set is extensible through
                 `programs.ida-pro.pluginPackageExtensions` and exposes
-                `ida-pro` as the selected `programs.ida-pro.package`.
+                `ida-pro` as the selected `programs.ida-pro.package` plus
+                `ida-sdk` as the matching SDK source.
               '';
               type = types.functionTo (types.listOf pluginType);
               default = _: [ ];

@@ -50,7 +50,7 @@ programs.ida-pro = {
 };
 ```
 
-Plugin definitions are selected like Python packages with `plugins = ps: [ ... ];`. Use `plugins = ps: ps.allPlugins;` to install every plugin in the scope. The `ps` scope is extensible with `programs.ida-pro.pluginPackageExtensions`; it also exposes `ida-pro` as the selected IDA package for plugins that need it.
+Plugin definitions are selected like Python packages with `plugins = ps: [ ... ];`. Use `plugins = ps: ps.allPlugins;` to install every plugin in the scope. The `ps` scope is extensible with `programs.ida-pro.pluginPackageExtensions`; it also exposes `ida-pro` as the selected IDA package and `ida-sdk` as the matching SDK source for plugins that need them.
 
 If Stylix is enabled, the module also exposes `stylix.targets.ida-pro.enable` and will generate/select a `stylix` IDA theme by default.
 
