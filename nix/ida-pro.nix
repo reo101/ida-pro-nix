@@ -29,7 +29,7 @@
         pkgs.stdenv.cc.cc.lib
       ];
 
-      patchelfRpaths = lib.map (pkg: "${lib.getLib pkg}/lib") [
+      patchelfRpaths = lib.makeSearchPathOutput "lib" "lib" [
         pkgs.libsecret
         pkgs.openssl
         pkgs.curl
