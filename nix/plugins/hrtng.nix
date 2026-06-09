@@ -4,7 +4,7 @@
   fetchFromGitHub,
   binutils,
   cmake,
-  ida-pro,
+  ida-pro-version,
   ida-sdk,
   ...
 }:
@@ -52,7 +52,7 @@ rec {
     cmakeFlags = [
       # (lib.cmakeOptionType "PATH" "CRYPTOPP_SOURCES" "${cryptoppSrc}")
       (lib.cmakeFeature "CMAKE_BUILD_TYPE" "Release")
-      (lib.cmakeFeature "IDASDK_VER" (lib.versions.pad 2 ida-pro.version))
+      (lib.cmakeFeature "IDASDK_VER" (lib.versions.pad 2 ida-pro-version))
       (lib.cmakeFeature "IDASDK_DIR" "${ida-sdk}/src")
       (lib.cmakeBool "CRYPTOPP_BUILD_TESTING" false)
     ];

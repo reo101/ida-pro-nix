@@ -3,7 +3,7 @@
 {
   perSystem =
     {
-      self',
+      config,
       pkgs,
       ...
     }:
@@ -38,10 +38,10 @@
       idaProFhs = pkgs.buildFHSEnv { name = "ida-pro-fhs"; };
     in
     {
-      packages.default = self'.packages.ida-pro;
+      packages.default = config.packages.ida-pro;
       packages.ida-pro = pkgs.stdenvNoCC.mkDerivation (finalAttrs: {
         pname = "ida-pro";
-        version = "9.3.260327";
+        version = config.legacyPackages.supported.ida-pro-version;
 
         src = throw "Provide the source yourself, :クルーレス:";
 

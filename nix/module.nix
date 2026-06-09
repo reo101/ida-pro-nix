@@ -1,11 +1,14 @@
 { config, inputs, ... }:
 
+let
+  flakeConfig = config;
+in
 {
   imports = [
     inputs.flake-parts.flakeModules.modules
   ];
 
-  flake.modules.homeManager.default = config.flake.modules.homeManager.ida-pro;
+  flake.modules.homeManager.default = flakeConfig.flake.modules.homeManager.ida-pro;
   flake.modules.homeManager.ida-pro =
     {
       pkgs,
@@ -22,11 +25,13 @@
 
       idaPythonPackageExtension = import ./packages/python-packages-extension.nix;
 
-      pluginsScope = import ./plugins {
-        inherit lib pkgs;
-        ida-pro = cfg.package;
-        extensions = cfg.pluginPackageExtensions;
-      };
+      pluginBaseScope =
+        flakeConfig.flake.legacyPackages.${pkgs.stdenv.hostPlatform.system}.idaPlugins;
+
+      pluginsScope =
+        lib.foldl' (scope: extension: scope.overrideScope extension)
+          pluginBaseScope
+          cfg.pluginPackageExtensions;
 
       extendPython =
         python:
@@ -338,15 +343,22 @@
                 Extensions applied to the IDA plugin package set passed to
                 `programs.ida-pro.plugins`. Extension functions receive the
                 final and previous plugin scopes and may use `final.callPackage`.
+                They are layered with `overrideScope` on top of the exported
+                `legacyPackages.''${system}.idaPlugins` scope.
 
-                The scope exposes `ida-pro`, bound to
-                `programs.ida-pro.package`, and `ida-sdk`, bound to the matching
-                IDA SDK source, so plugin definitions can depend on the selected
-                IDA Pro package and SDK. `allPlugins` is computed from
-                plugin-shaped scope attributes.
+                The scope exposes `ida-pro-version`, bound to
+                `programs.ida-pro.package.version`, and `ida-sdk`, bound to the
+                matching IDA SDK source. This lets plugin definitions depend on
+                the selected IDA version and SDK without depending on the IDA Pro
+                derivation. `allPlugins` is computed from plugin-shaped scope
+                attributes.
               '';
               type = types.listOf types.raw;
               default = [ ];
+              apply =
+                extensions:
+                [ (_final: _prev: { ida-pro-version = cfg.package.version; }) ]
+                ++ extensions;
               example = lib.literalExpression ''
                 [
                   (final: prev: {
@@ -359,12 +371,12 @@
               description = ''
                 Plugins to be installed alongside IDA Pro. The value is a
                 function, like `python.withPackages`, that receives the IDA
-                plugin package set.
+                plugin package set derived from `legacyPackages.''${system}.idaPlugins`.
 
                 The package set is extensible through
                 `programs.ida-pro.pluginPackageExtensions` and exposes
-                `ida-pro` as the selected `programs.ida-pro.package` plus
-                `ida-sdk` as the matching SDK source.
+                `ida-pro-version` as the selected `programs.ida-pro.package.version`
+                plus `ida-sdk` as the matching SDK source.
               '';
               type = types.functionTo (types.listOf pluginType);
               default = _: [ ];

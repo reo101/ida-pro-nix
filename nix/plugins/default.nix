@@ -1,19 +1,20 @@
 {
   lib,
   pkgs,
-  ida-pro,
-  ida-sdk ? pkgs.fetchFromGitHub {
-    owner = "HexRaysSA";
-    repo = "ida-sdk";
-    rev = "v${lib.versions.pad 2 ida-pro.version}.1-release";
-    hash = "sha256-on7EDh0bwnhordMN9AoIGFdQWCzPtwcOagvmcWBtjkk=";
-  },
+  ida-pro-version,
   extensions ? [ ],
 }:
 
 let
   baseScope = lib.makeScope pkgs.newScope (self: {
-    inherit ida-pro ida-sdk;
+    inherit ida-pro-version;
+
+    ida-sdk = pkgs.fetchFromGitHub {
+      owner = "HexRaysSA";
+      repo = "ida-sdk";
+      rev = "v${lib.versions.pad 2 self.ida-pro-version}.1-release";
+      hash = "sha256-on7EDh0bwnhordMN9AoIGFdQWCzPtwcOagvmcWBtjkk=";
+    };
 
     diaphora = self.callPackage ./diaphora.nix { };
     hrtng = self.callPackage ./hrtng.nix { };
@@ -33,7 +34,7 @@ let
     ) (builtins.removeAttrs scope [
       "allPlugins"
       "callPackage"
-      "ida-pro"
+      "ida-pro-version"
       "ida-sdk"
       "newScope"
       "overrideScope"
