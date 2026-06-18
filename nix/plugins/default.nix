@@ -19,6 +19,7 @@ let
     diaphora = self.callPackage ./diaphora.nix { };
     hrtng = self.callPackage ./hrtng.nix { };
     ida-cyberchef = self.callPackage ./ida-cyberchef.nix { };
+    idasvg = self.callPackage ./idasvg.nix { };
     openlumina = self.callPackage ./openlumina.nix { };
     ponce = self.callPackage ./ponce.nix { };
     tenet = self.callPackage ./tenet.nix { };
