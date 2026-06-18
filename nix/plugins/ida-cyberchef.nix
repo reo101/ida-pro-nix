@@ -20,4 +20,6 @@ rec {
       pydantic
       stpyv8
     ];
+
+  meta.platforms = [ "x86_64-linux" ];
 }

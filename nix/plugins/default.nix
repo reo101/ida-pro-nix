@@ -27,22 +27,34 @@ let
 
   extendedScope = lib.foldl' (scope: extension: scope.overrideScope extension) baseScope extensions;
 
+  nonPluginAttrs = [
+    "allPlugins"
+    "callPackage"
+    "ida-pro-version"
+    "ida-sdk"
+    "newScope"
+    "overrideScope"
+    "packages"
+  ];
+
+  pluginCandidates = scope: builtins.removeAttrs scope nonPluginAttrs;
+
+  isPlugin = value: lib.isAttrs value && value ? pname && value ? version && value ? drv;
+
+  isPluginSupported = plugin: lib.meta.availableOn pkgs.stdenv.hostPlatform plugin;
+
   pluginAttrs =
     scope:
-    lib.filterAttrs (_: value: lib.isAttrs value && value ? pname && value ? version && value ? drv) (
-      builtins.removeAttrs scope [
-        "allPlugins"
-        "callPackage"
-        "ida-pro-version"
-        "ida-sdk"
-        "newScope"
-        "overrideScope"
-        "packages"
-      ]
+    lib.filterAttrs (_: value: isPlugin value && isPluginSupported value) (pluginCandidates scope);
+
+  unsupportedPluginNames =
+    scope:
+    lib.attrNames (
+      lib.filterAttrs (_: value: isPlugin value && !isPluginSupported value) (pluginCandidates scope)
     );
-in
-extendedScope.overrideScope (
-  final: prev: {
+
+  scopeWithAllPlugins = extendedScope.overrideScope (final: prev: {
     allPlugins = lib.attrValues (pluginAttrs final);
-  }
-)
+  });
+in
+builtins.removeAttrs scopeWithAllPlugins (unsupportedPluginNames scopeWithAllPlugins)
