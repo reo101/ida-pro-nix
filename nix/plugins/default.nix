@@ -22,6 +22,7 @@ let
     openlumina = self.callPackage ./openlumina.nix { };
     ponce = self.callPackage ./ponce.nix { };
     tenet = self.callPackage ./tenet.nix { };
+    unicorn-tracer-arm64 = self.callPackage ./unicorn-tracer-arm64.nix { };
   });
 
   extendedScope = lib.foldl' (scope: extension: scope.overrideScope extension) baseScope extensions;
