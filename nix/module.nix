@@ -257,6 +257,10 @@ in
                 type = pythonPackagesSpecType;
                 default = _: [ ];
               };
+              installEntries = lib.mkOption {
+                type = types.nullOr (types.listOf types.str);
+                default = null;
+              };
             };
           };
         in
@@ -579,10 +583,25 @@ in
 
           '${lib.getExe' pkgs.coreutils "mkdir"}' -p "$IDAUSR/plugins";
           ${lib.pipe cfg.plugins [
-            (lib.map (plugin: /* bash */ ''
-              # Install `${plugin.pname}` plugin (version `${plugin.version}`)
-              ln -sfnT ${plugin.drv} "$IDAUSR/plugins/${plugin.installName or plugin.pname}";
-            ''))
+            (lib.map (
+              plugin:
+              /* bash */ ''
+                # Install `${plugin.pname}` plugin (version `${plugin.version}`)
+                ${
+                  if plugin.installEntries != null then
+                    lib.pipe plugin.installEntries [
+                      (lib.map (entry: ''
+                        ln -sfnT ${plugin.drv}/${entry} "$IDAUSR/plugins/${entry}";
+                      ''))
+                      (lib.concatStringsSep "\n")
+                    ]
+                  else
+                    ''
+                      ln -sfnT ${plugin.drv} "$IDAUSR/plugins/${plugin.installName or plugin.pname}";
+                    ''
+                }
+              ''
+            ))
             (lib.concatStringsSep "\n")
           ]}
 

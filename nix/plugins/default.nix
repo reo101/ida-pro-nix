@@ -6,8 +6,10 @@
 }:
 
 let
+  pythonPackages = pkgs.python3Packages;
+
   baseScope = lib.makeScope pkgs.newScope (self: {
-    inherit ida-pro-version;
+    inherit ida-pro-version pythonPackages;
 
     ida-sdk = pkgs.fetchFromGitHub {
       owner = "HexRaysSA";
@@ -18,6 +20,7 @@ let
 
     diaphora = self.callPackage ./diaphora.nix { };
     hrtng = self.callPackage ./hrtng.nix { };
+    idac = self.callPackage ./idac.nix { };
     ida-cyberchef = self.callPackage ./ida-cyberchef.nix { };
     idasvg = self.callPackage ./idasvg.nix { };
     openlumina = self.callPackage ./openlumina.nix { };

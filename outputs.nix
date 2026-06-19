@@ -54,6 +54,7 @@ inputs.flake-parts.lib.mkFlake { inherit inputs; } (
         config = {
           allowUnfree = true;
         };
+        overlays = [ config.flake.overlays.default ];
       };
     };
   }
