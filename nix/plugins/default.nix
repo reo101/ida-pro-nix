@@ -28,19 +28,20 @@ let
 
   pluginAttrs =
     scope:
-    lib.filterAttrs (
-      _: value:
-      lib.isAttrs value && value ? pname && value ? version && value ? drv
-    ) (builtins.removeAttrs scope [
-      "allPlugins"
-      "callPackage"
-      "ida-pro-version"
-      "ida-sdk"
-      "newScope"
-      "overrideScope"
-      "packages"
-    ]);
+    lib.filterAttrs (_: value: lib.isAttrs value && value ? pname && value ? version && value ? drv) (
+      builtins.removeAttrs scope [
+        "allPlugins"
+        "callPackage"
+        "ida-pro-version"
+        "ida-sdk"
+        "newScope"
+        "overrideScope"
+        "packages"
+      ]
+    );
 in
-extendedScope.overrideScope (final: prev: {
-  allPlugins = lib.attrValues (pluginAttrs final);
-})
+extendedScope.overrideScope (
+  final: prev: {
+    allPlugins = lib.attrValues (pluginAttrs final);
+  }
+)

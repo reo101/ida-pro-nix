@@ -25,13 +25,11 @@ in
 
       idaPythonPackageExtension = import ./packages/python-packages-extension.nix;
 
-      pluginBaseScope =
-        flakeConfig.flake.legacyPackages.${pkgs.stdenv.hostPlatform.system}.idaPlugins;
+      pluginBaseScope = flakeConfig.flake.legacyPackages.${pkgs.stdenv.hostPlatform.system}.idaPlugins;
 
-      pluginsScope =
-        lib.foldl' (scope: extension: scope.overrideScope extension)
-          pluginBaseScope
-          cfg.pluginPackageExtensions;
+      pluginsScope = lib.foldl' (
+        scope: extension: scope.overrideScope extension
+      ) pluginBaseScope cfg.pluginPackageExtensions;
 
       extendPython =
         python:
@@ -355,10 +353,7 @@ in
               '';
               type = types.listOf types.raw;
               default = [ ];
-              apply =
-                extensions:
-                [ (_final: _prev: { ida-pro-version = cfg.package.version; }) ]
-                ++ extensions;
+              apply = extensions: [ (_final: _prev: { ida-pro-version = cfg.package.version; }) ] ++ extensions;
               example = lib.literalExpression ''
                 [
                   (final: prev: {
