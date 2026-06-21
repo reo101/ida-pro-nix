@@ -49,7 +49,7 @@ inputs.flake-parts.lib.mkFlake { inherit inputs; } (
     };
 
     perSystem =
-      { system, ... }:
+      { pkgs, system, ... }:
       {
         _module.args.pkgs = import inputs.nixpkgs {
           inherit system;
@@ -58,6 +58,8 @@ inputs.flake-parts.lib.mkFlake { inherit inputs; } (
           };
           overlays = [ config.flake.overlays.default ];
         };
+
+        formatter = pkgs.nixfmt;
       };
   }
 )
