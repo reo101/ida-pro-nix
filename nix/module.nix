@@ -23,7 +23,7 @@ in
       pythonSharedLibrary = "${cfg.pythonPackage}/lib/lib${cfg.pythonPackage.libPrefix}${libext}";
       pythonSitePath = "${cfg.pythonPackage}/${cfg.pythonPackage.sitePackages}";
 
-      idaPythonPackageExtension = import ./packages/python-packages-extension.nix;
+      idaPythonPackageExtension = import ./python-packages/extension.nix { inherit lib; };
 
       pluginBaseScope = flakeConfig.flake.legacyPackages.${pkgs.stdenv.hostPlatform.system}.idaPlugins;
 
@@ -583,25 +583,22 @@ in
 
           '${lib.getExe' pkgs.coreutils "mkdir"}' -p "$IDAUSR/plugins";
           ${lib.pipe cfg.plugins [
-            (lib.map (
-              plugin:
-              /* bash */ ''
-                # Install `${plugin.pname}` plugin (version `${plugin.version}`)
-                ${
-                  if plugin.installEntries != null then
-                    lib.pipe plugin.installEntries [
-                      (lib.map (entry: ''
-                        ln -sfnT ${plugin.drv}/${entry} "$IDAUSR/plugins/${entry}";
-                      ''))
-                      (lib.concatStringsSep "\n")
-                    ]
-                  else
-                    ''
-                      ln -sfnT ${plugin.drv} "$IDAUSR/plugins/${plugin.installName or plugin.pname}";
-                    ''
-                }
-              ''
-            ))
+            (lib.map (plugin: /* bash */ ''
+              # Install `${plugin.pname}` plugin (version `${plugin.version}`)
+              ${
+                if plugin.installEntries != null then
+                  lib.pipe plugin.installEntries [
+                    (lib.map (entry: ''
+                      ln -sfnT ${plugin.drv}/${entry} "$IDAUSR/plugins/${entry}";
+                    ''))
+                    (lib.concatStringsSep "\n")
+                  ]
+                else
+                  ''
+                    ln -sfnT ${plugin.drv} "$IDAUSR/plugins/${plugin.installName or plugin.pname}";
+                  ''
+              }
+            ''))
             (lib.concatStringsSep "\n")
           ]}
 

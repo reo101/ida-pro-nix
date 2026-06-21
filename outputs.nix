@@ -14,8 +14,8 @@ inputs.flake-parts.lib.mkFlake { inherit inputs; } (
       inputs.flake-file.flakeModules.default
       ./nix/ida-pro.nix
       ./nix/module.nix
-      ./nix/packages
-      ./nix/plugins/module.nix
+      ./nix/python-packages
+      ./nix/plugins
       ./nix/supported.nix
       ./nix/themes
     ];
@@ -48,14 +48,16 @@ inputs.flake-parts.lib.mkFlake { inherit inputs; } (
       };
     };
 
-    perSystem = { system, ... }: {
-      _module.args.pkgs = import inputs.nixpkgs {
-        inherit system;
-        config = {
-          allowUnfree = true;
+    perSystem =
+      { system, ... }:
+      {
+        _module.args.pkgs = import inputs.nixpkgs {
+          inherit system;
+          config = {
+            allowUnfree = true;
+          };
+          overlays = [ config.flake.overlays.default ];
         };
-        overlays = [ config.flake.overlays.default ];
       };
-    };
   }
 )
