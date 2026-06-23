@@ -67,6 +67,17 @@
           runHook postInstall
         '';
 
+        passthru.services.default = {
+          imports = [
+            (lib.modules.importApply ./service.nix {
+              inherit (pkgs)
+                writeShellScript
+                ;
+            })
+          ];
+          vault-server.package = lib.mkDefault finalAttrs.finalPackage;
+        };
+
         meta = {
           description = "Make your team work together. On the same binary, synchronized across all devices.";
           homepage = "https://hex-rays.com/teams";
