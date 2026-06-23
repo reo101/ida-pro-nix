@@ -9,9 +9,8 @@
     }:
     let
       hexVaultFhs = pkgs.buildFHSEnv { name = "hex-vault-fhs"; };
-    in
-    {
-      packages.hexvault = pkgs.stdenvNoCC.mkDerivation (finalAttrs: {
+
+      hexvault = pkgs.stdenvNoCC.mkDerivation (finalAttrs: {
         pname = "hexvault";
         version = "2.0";
 
@@ -70,5 +69,10 @@
           mainProgram = "vault_server";
         };
       });
+    in
+    {
+      packages = lib.filterAttrs (_: lib.meta.availableOn pkgs.stdenv.hostPlatform) {
+        inherit hexvault;
+      };
     };
 }
