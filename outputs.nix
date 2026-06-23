@@ -13,6 +13,7 @@ inputs.flake-parts.lib.mkFlake { inherit inputs; } (
     imports = [
       inputs.flake-file.flakeModules.default
       ./nix/packages/ida-pro.nix
+      ./nix/packages/hexvault
       ./nix/modules/ida-pro.nix
       ./nix/python-packages
       ./nix/plugins
