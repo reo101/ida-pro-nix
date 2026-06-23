@@ -23,7 +23,7 @@ in
       pythonSharedLibrary = "${cfg.pythonPackage}/lib/lib${cfg.pythonPackage.libPrefix}${libext}";
       pythonSitePath = "${cfg.pythonPackage}/${cfg.pythonPackage.sitePackages}";
 
-      idaPythonPackageExtension = import ./python-packages/extension.nix { inherit lib; };
+      idaPythonPackageExtension = import ../python-packages/extension.nix { inherit lib; };
 
       pluginBaseScope = flakeConfig.flake.legacyPackages.${pkgs.stdenv.hostPlatform.system}.idaPlugins;
 
@@ -118,7 +118,7 @@ in
         && config.stylix.targets.ida-pro.enable
         && config ? lib.stylix.colors;
 
-      stylixCss = import ./themes/stylix.nix { colors = config.lib.stylix.colors; };
+      stylixCss = import ../themes/stylix.nix { colors = config.lib.stylix.colors; };
 
       registrySettingsDefaults = {
         AutoCheckUpdates = 0;
