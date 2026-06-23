@@ -121,9 +121,11 @@ in
       stylixCss = import ./themes/stylix.nix { colors = config.lib.stylix.colors; };
 
       registrySettingsDefaults = {
-        Python3TargetDLL = pythonSharedLibrary;
-        Python3ExtraSitePaths = pythonSitePath;
+        AutoCheckUpdates = 0;
+        InformedAboutUpdates3 = 1;
         Python3ExtraBinPaths = pluginBinPath;
+        Python3ExtraSitePaths = pythonSitePath;
+        Python3TargetDLL = pythonSharedLibrary;
         ThemeName = selectedTheme;
       }
       // lib.listToAttrs (lib.map (eula: lib.nameValuePair "EULA ${lib.toString eula}" 1) cfg.eulas);
