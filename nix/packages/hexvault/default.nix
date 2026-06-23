@@ -8,6 +8,10 @@
       ...
     }:
     let
+      patchelfRpaths = lib.makeSearchPathOutput "lib" "lib" [
+        pkgs.openssl
+      ];
+
       hexVaultFhs = pkgs.buildFHSEnv { name = "hex-vault-fhs"; };
 
       hexvault = pkgs.stdenvNoCC.mkDerivation (finalAttrs: {
@@ -24,6 +28,8 @@
         buildInputs = [
           pkgs.stdenv.cc.cc
         ];
+
+        appendRunpaths = patchelfRpaths;
 
         dontConfigure = true;
         dontBuild = true;
