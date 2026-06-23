@@ -300,7 +300,8 @@ in
               description = ''
                 `hexlic` license file.
               '';
-              type = pathLike;
+              type = types.nullOr pathLike;
+              default = null;
             };
             pythonPackage = lib.mkOption {
               description = ''
@@ -530,10 +531,12 @@ in
 
           '${lib.getExe' pkgs.coreutils "mkdir"}' -p "$IDAUSR";
 
-          hexlic=${lib.escapeShellArg cfg.hexlic}
-          if [ -e "$hexlic" ]; then
-            ln -sfnT "$hexlic" "$IDAUSR/idapro.hexlic";
-          fi
+          ${lib.optionalString (cfg.hexlic != null) /* bash */ ''
+            hexlic=${lib.escapeShellArg cfg.hexlic}
+            if [ -e "$hexlic" ]; then
+              ln -sfnT "$hexlic" "$IDAUSR/idapro.hexlic";
+            fi
+          ''}
 
           '${lib.getExe cfg.pythonPackage}' <<'PY';
           from glob import glob
