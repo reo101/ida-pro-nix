@@ -20,6 +20,12 @@ in
   _class = "service";
 
   options.vault-server = {
+    enable = lib.mkOption {
+      type = types.bool;
+      default = (lib.tryEval cfg.package.src or cfg.package).success;
+      description = "Whether to run HexVault.";
+    };
+
     package = lib.mkOption {
       type = types.package;
       description = "Package to use for HexVault.";
@@ -188,6 +194,7 @@ in
   }
   // lib.optionalAttrs (options ? systemd) {
     systemd.service = {
+      enable = cfg.enable;
       after = [ "network-online.target" ];
       wants = [ "network-online.target" ];
       wantedBy = [ "multi-user.target" ];
