@@ -82,7 +82,9 @@
           cp -aT . "$out"
 
           mkdir -p "$out/bin";
+          ln -s "$out/hv" "$out/bin/";
           ln -s "$out/ida" "$out/bin/";
+          ln -s "$out/idat" "$out/bin/";
 
           install -Dm644 "$out/appico.png" "$out/share/pixmaps/${finalAttrs.pname}.png";
 
