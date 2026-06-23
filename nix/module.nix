@@ -296,7 +296,11 @@ in
                 Which versions of the [Hex-Rays EULA](https://hex-rays.com/eula) you agree to.
               '';
               type = types.listOf (lib.types.enum (lib.range 90 94));
-              default = [ ];
+              # NOTE: having access to IDA Pro requires having accepted the EULA
+              #       over at <https://hex-rays.com/eula> in the first place
+              default = lib.optionals (lib.tryEval cfg.package).success [
+                90
+              ];
             };
             hexlic = lib.mkOption {
               description = ''
